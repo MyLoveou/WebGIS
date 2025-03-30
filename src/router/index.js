@@ -1,6 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import frame from '@/views/main/frame.vue'
-import map from '@/views/map/map.vue'
+import map from '@/views/multdata/map.vue'
 import login from '@/views/login/login.vue'
 
 const router = createRouter({

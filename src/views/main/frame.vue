@@ -6,17 +6,20 @@ import { RouterLink, RouterView } from 'vue-router'
   <div class="common-layout">
     <el-container>
       <el-header>
-        <!-- <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal" :ellipsis="false"
-          @select="handleSelect">
-        </el-menu> -->
+        测试
       </el-header>
       <el-container class="aside-main">
         <el-aside width="200px">
-          <!-- <el-menu default-active="2" class="el-menu-vertical-demo" @open="handleOpen" @close="handleClose"> -->
-          <!-- </el-menu> -->
+          <el-menu default-active="2" class="el-menu-vertical-demo" @open="handleOpen" @close="handleClose">
+            <el-menu-item index="4">
+              <el-icon>
+                <setting />
+              </el-icon>
+              <span>多源数据汇聚</span>
+            </el-menu-item>
+          </el-menu>
         </el-aside>
         <el-main><router-view></router-view></el-main>
-
       </el-container>
     </el-container>
   </div>
@@ -32,6 +35,7 @@ import { RouterLink, RouterView } from 'vue-router'
   --el-main-padding: 0px !important;
   height: 663px;
 }
+
 .el-container {
 
   height: 100%;
