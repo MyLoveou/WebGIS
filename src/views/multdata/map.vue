@@ -296,7 +296,7 @@ const creatGeojsonLayer = (URL, checked) => {
       style: new Style({
         stroke: new Stroke({
           color: '#3672af',
-          width: 1
+          width: 3
         })
       })
     })
@@ -372,11 +372,14 @@ onMounted(() => {
             </div>
           </el-collapse-item>
         </el-collapse>
-        <input type="file" ref="fileUpload" accept=".tif,.tiff,.geojson,.topojson,.gpx,.kml,.gml,.json"
+
+
+        <div class="upload-container">
+          <input class="input-con" type="file" ref="fileUpload" accept=".tif,.tiff,.geojson,.topojson,.gpx,.kml,.gml,.json"
           @change="handleFileUpload" key="file-upload" />
+        </div>
         <!-- <el-button type="primary" @click="handleUploadClick" style="margin-top: 10px;">
           上传本地文件
-
         </el-button> -->
       </el-aside>
     </el-container>
@@ -393,6 +396,30 @@ onMounted(() => {
   position: absolute;
   z-index: 100;
   right: 0;
+}
+
+.el-aside {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  
+  :deep(.el-collapse) {
+    flex: 1;
+    overflow: auto;
+  }
+}
+
+.upload-container {
+  padding: 10px;
+  border-top: 1px solid #ebeef5;
+  background: white;
+  position: sticky;
+  bottom: 0;
+}
+
+.input-con {
+  width: 100%;
+  margin-top: auto;
 }
 
 .Selectform {
