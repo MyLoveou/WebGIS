@@ -29,8 +29,8 @@ const AddLayer = (item, key, category, checked) => {
     // 添加新图层
     const layer = new TileLayer({
       source: new XYZ({
-        url: item.value + key,
-        projection: 'EPSG:4326',  // 修改为与地图相同的投影
+        url: item.value + key, // 添加TMS参数,
+        projection: 'EPSG:3857' // 明确指定坐标系
       }),
       properties: {
         center: [114.61760630731898, -57.997879217038296],
@@ -87,11 +87,11 @@ const handleCheckedChange = (item, category, checked) => {
 const sourcedata = reactive({
   '天地图': [
     {
-      value: 'http://t{1-7}.tianditu.gov.cn/vec_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=vec&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk=',
+      value: 'http://t{1-7}.tianditu.gov.cn/vec_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=vec&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tilematrixset=GoogleMapsCompatible&tk=',
       label: '矢量地图',
     },
     {
-      value: 'http://t{1-7}.tianditu.gov.cn/img_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=img&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk=',
+      value: 'http://t{1-7}.tianditu.gov.cn/img_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=img&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tilematrixset=GoogleMapsCompatible&tk=',
       label: '影像底图',
     },
     {
@@ -111,7 +111,7 @@ const sourcedata = reactive({
   ],
   'arcgis地图': [
     {
-      value: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      value: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}&tilematrixset=GoogleMapsCompatible',
       label: 'arcgis地图'
     }
   ],
@@ -158,7 +158,7 @@ const handleFileUpload = (e) => {
       ElMessage.warning('文件已存在')
     }
   }
-};
+}
 
 
 // 加载GPX文件
@@ -255,62 +255,50 @@ const createGPXLayer = (URL, checked) => {
 
 
 // 加载geojson文件
-const creatGeojsonLayer = (URL, checked) => {
-  if (checked) {
-    const vectorSource = new source.Vector({
-      url: URL,
-      format: new GeoJSON({
-        dataProjection: 'EPSG:4326',
-        featureProjection: 'EPSG:3857'
-      }),
-      // // 添加坐标系转换配置
-      // loader: function (extent, resolution, projection) {
-      //   fetch(URL)
-      //     .then(response => response.json())
-      //     .then(data => {
-      //       const features = new format.GeoJSON().readFeatures(data, {
-      //         dataProjection: 'EPSG:4326',    // 原始坐标系
-      //         featureProjection: 'EPSG:3857'
-      //       });
-      //       console.log(data)
-      //       vectorSource.addFeatures(features);
-
-      //       // 自动适配视图范围
-      //       const extent = vectorSource.getExtent();
-      //       if (extent[0] !== Infinity) {
-      //         layermap.value.getView().fit(extent, {
-      //           padding: [50, 50, 50, 50],
-      //           duration: 1000
-      //         });
-      //       }
-      //     });
-      // }
-    })
-
-    const vectorLayer = new VectorLayer({
-      source: vectorSource,
-      properties: {
-        name: 'geojson',
-        title: 'geojson数据'
-      },
-      style: new Style({
-        stroke: new Stroke({
-          color: '#3672af',
-          width: 3
+const creatGeojsonLayer = async (URL, checked) => {
+  try {
+    if (checked) {
+      console.log('正在加载geojson文件');
+      
+      // 添加fetch获取实际数据
+      const response = await fetch(URL)
+      const geojsonData = await response.json()
+      const vectorSource = new source.Vector({
+        features: new GeoJSON().readFeatures(geojsonData, {
+          dataProjection: 'EPSG:4326', // 数据原始投影
+          featureProjection: 'EPSG:3857' // 转换到地图投影
         })
       })
-    })
 
-    layermap.value.addLayer(vectorLayer)
-    layers.value.set(URL, vectorLayer)
-  } else {
-    // 移除已有图层
-    const layer = layers.value.get(URL);
-    if (layer) {
-      layermap.value.removeLayer(layer)
-      layers.value.delete(URL);
+      const vectorLayer = new VectorLayer({
+        source: vectorSource,
+        properties: {
+          name: 'geojson',
+          title: 'geojson数据'
+        },
+        style: new Style({
+          stroke: new Stroke({
+            color: '#666666',
+            width: 3
+          })
+        })
+      })
+
+      layermap.value.addLayer(vectorLayer)
+      layers.value.set(URL, vectorLayer)
+    } else {
+      // 移除已有图层
+      const layer = layers.value.get(URL);
+      if (layer) {
+        layermap.value.removeLayer(layer)
+        layers.value.delete(URL);
+      }
     }
+  }catch (error) {
+    console.error('加载GeoJSON失败:', error);
+    // 可以添加错误处理（例如显示通知）
   }
+ 
 }
 //////////////////////////////////// 本地文件上传和显示 ////////////////////////////////////
 
@@ -332,7 +320,7 @@ onMounted(() => {
       // 北京 为中心
       center: [114.61760630731898, -57.997879217038296],
       zoom: 8,
-      projection: 'EPSG:4326',
+      projection: 'EPSG:3857' // 统一使用Web墨卡托
     }),
     // 鼠标控件：鼠标在地图上移动时显示坐标信息。
     controls: defaultControls().extend([
@@ -375,8 +363,8 @@ onMounted(() => {
 
 
         <div class="upload-container">
-          <input class="input-con" type="file" ref="fileUpload" accept=".tif,.tiff,.geojson,.topojson,.gpx,.kml,.gml,.json"
-          @change="handleFileUpload" key="file-upload" />
+          <input class="input-con" type="file" ref="fileUpload"
+            accept=".tif,.tiff,.geojson,.topojson,.gpx,.kml,.gml,.json" @change="handleFileUpload" key="file-upload" />
         </div>
         <!-- <el-button type="primary" @click="handleUploadClick" style="margin-top: 10px;">
           上传本地文件
@@ -392,17 +380,11 @@ onMounted(() => {
   height: 80vh;
 }
 
-.btn {
-  position: absolute;
-  z-index: 100;
-  right: 0;
-}
-
 .el-aside {
   display: flex;
   flex-direction: column;
   position: relative;
-  
+
   :deep(.el-collapse) {
     flex: 1;
     overflow: auto;
