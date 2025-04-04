@@ -68,7 +68,7 @@ const handleCheckedChange = (item, category, checked) => {
   else {
     console.log(item.value)
     console.log(item.type)
-    if (item.type == 'json') {
+    if (item.type == 'json' || item.type == 'geojson') {
       creatGeojsonLayer(item.value, checked)
     }
     if (item.type == 'gpx') {
@@ -259,7 +259,7 @@ const creatGeojsonLayer = async (URL, checked) => {
   try {
     if (checked) {
       console.log('正在加载geojson文件');
-      
+
       // 添加fetch获取实际数据
       const response = await fetch(URL)
       const geojsonData = await response.json()
@@ -294,11 +294,11 @@ const creatGeojsonLayer = async (URL, checked) => {
         layers.value.delete(URL);
       }
     }
-  }catch (error) {
+  } catch (error) {
     console.error('加载GeoJSON失败:', error);
     // 可以添加错误处理（例如显示通知）
   }
- 
+
 }
 //////////////////////////////////// 本地文件上传和显示 ////////////////////////////////////
 
@@ -360,15 +360,10 @@ onMounted(() => {
             </div>
           </el-collapse-item>
         </el-collapse>
-
-
         <div class="upload-container">
           <input class="input-con" type="file" ref="fileUpload"
             accept=".tif,.tiff,.geojson,.topojson,.gpx,.kml,.gml,.json" @change="handleFileUpload" key="file-upload" />
         </div>
-        <!-- <el-button type="primary" @click="handleUploadClick" style="margin-top: 10px;">
-          上传本地文件
-        </el-button> -->
       </el-aside>
     </el-container>
   </div>

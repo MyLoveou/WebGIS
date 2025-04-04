@@ -8,14 +8,15 @@ import Heatmap from 'ol/layer/Heatmap'
 import VectorSource from 'ol/source/Vector'
 import HeatData from "@/assets/mapJson/all_month.json"
 
+import { ElMessage } from 'element-plus'
+
 const map = ref(null)
-const fileUpload = ref(null)
 // 修改折叠面板控制变量为数组，可以同时展开多个
 const activeCollapse = ref(['1']);
 const activeMapSource = ref([]); // 添加地图源折叠控制
 
 const sourcedata = reactive({
-  // url, type, label, 
+  // { url, type, name }
 })
 
 const data = reactive({
@@ -25,6 +26,44 @@ const data = reactive({
 //////////////////// 选择底图 ////////////////////
 
 
+const mapfileUpload = ref(null)
+const checkedmap = ref([])
+const mapfile = reactive([
+  // { name, type, url }
+
+])
+const triggermapFileInput = () => {
+  mapfileUpload.value.click()
+}
+const handlemapFileUpload = (e) => {
+  const files = e.target.files;
+  if (files.length > 0) {
+    const file = files[0];
+    console.log('上传的文件:', file);
+    // 清空已选文件防止重复触发
+    e.target.value = null;
+    const exists = mapfile.some(f => f.name === file.name);
+    if (!exists) {
+      mapfile.push({
+        url: URL.createObjectURL(file),
+        name: file.name,
+        type: file.name.split('.').pop().toLowerCase() // 获取文件扩展
+      })
+      console.log('上传的文件信息:', mapfile[-1])
+    } else {
+      ElMessage.warning('文件已存在')
+    }
+  }
+}
+
+const mapstyleselectshhow = ref(false)
+
+const handleMapCheckedChange = (item, checked) => {
+  if (checked) {
+    mapstyleselectshhow.value = !mapstyleselectshhow.value
+  }
+}
+
 
 //////////////////// 选择底图 ////////////////////
 
@@ -32,20 +71,77 @@ const data = reactive({
 //////////////////// 加载数据 ////////////////////
 
 
+const datafileUpload = ref(null)
+const datafile = reactive([
+  // { name, type, url }
+])
+const checkeddata = ref([])
+const triggerdataFileInput = () => {
+  datafileUpload.value.click()
+}
+
+
+const handledataFileUpload = (e) => {
+  const files = e.target.files;
+  if (files.length > 0) {
+    const file = files[0];
+    console.log('上传的文件:', file);
+    // 清空已选文件防止重复触发
+    e.target.value = null;
+    const exists = datafile.some(f => f.name === file.name);
+    if (!exists) {
+      datafile.push({
+        url: URL.createObjectURL(file),
+        name: file.name,
+        type: file.name.split('.').pop().toLowerCase() // 获取文件扩展
+      })
+      console.log('上传的文件信息:', datafile[0])
+    } else {
+      ElMessage.warning('文件已存在')
+    }
+  }
+}
+
+const datastyleselectshhow = ref(false)
+
+const handleDataCheckedChange = (item, checked) => {
+  if (checked) {
+    datastyleselectshhow.value = !datastyleselectshhow.value
+  }
+}
 
 //////////////////// 加载数据 ////////////////////
 
 
 
-//////////////////// 颜色设置 ////////////////////
+//////////////////// 底图样式设置 ////////////////////
+
+
+const mapStyleOptions = reactive({
+  boundaryColor: '#000000', // 默认边界颜色
+  boundaryWidth: 1, // 默认边界宽度
+  backgroundColor: '#ffffff' // 默认背景颜色
+})
+
+const handleMapStyleChange = (property, value) => {
+  console.log(`修改的样式属性: ${property}, 新值: ${value}`);
+  // 根据需要在这里更新地图样式
+}
+
+//////////////////// 底图样式设置 ////////////////////
+
+//////////////////// 数据颜色和字段设置 ////////////////////
 
 
 
+//////////////////// 数据颜色和字段 ////////////////////
 
-//////////////////// 颜色设置 ////////////////////
 
 
 onMounted(() => {
+  // 添加文件上传监听
+  mapfileUpload.value.addEventListener('change', handlemapFileUpload);
+  datafileUpload.value.addEventListener('change', handledataFileUpload);
 
   // 创建热力图层
   const vectorSource = new VectorSource({
@@ -84,49 +180,104 @@ onMounted(() => {
     <el-main>
       <div id="map"></div>
     </el-main>
-    <el-aside width="200px">
+    <el-aside width="240px">
       <el-collapse v-model="activeCollapse">
         <el-collapse-item title="底图选择" name="1">
           <div class="checkbox-container">
             <el-collapse v-model="activeMapSource">
-              <el-collapse-item v-for="(values, category) in sourcedata" :key="category" :title="category"
-                :name="category">
-                <el-checkbox-group v-model="checkedCategories">
-                  <div class="map-source-group">
-                    <el-checkbox v-for="item in values" :key="item.value" :value="item.value"
-                      @change="(checked) => handleCheckedChange(item, category, checked)">
-                      {{ item.label }}
-                    </el-checkbox>
-                  </div>
-                </el-checkbox-group>
-              </el-collapse-item>
+              <el-checkbox-group v-model="checkedmap">
+                <div class="map-source-group">
+                  <el-checkbox v-for="item in mapfile" :key="item.url" :value="item.url"
+                    @change="(checked) => handleMapCheckedChange(item, checked)">
+
+                    {{ item.name }}
+                  </el-checkbox>
+                </div>
+              </el-checkbox-group>
             </el-collapse>
           </div>
         </el-collapse-item>
         <el-collapse-item title="数据选择" name="2">
           <div class="checkbox-container">
             <el-collapse v-model="activeMapSource">
-              <el-collapse-item v-for="(values, category) in sourcedata" :key="category" :title="category"
-                :name="category">
-                <el-checkbox-group v-model="checkedCategories">
-                  <div class="map-source-group">
-                    <el-checkbox v-for="item in values" :key="item.value" :value="item.value"
-                      @change="(checked) => handleCheckedChange(item, category, checked)">
-                      {{ item.label }}
-                    </el-checkbox>
-                  </div>
-                </el-checkbox-group>
-              </el-collapse-item>
+              <el-checkbox-group v-model="checkeddata">
+                <div class="map-source-group">
+                  <el-checkbox v-for="item in datafile" :key="item.url" :value="item.url"
+                    @change="(checked) => handleDataCheckedChange(item, checked)">
+
+                    {{ item.name }}
+                  </el-checkbox>
+                </div>
+              </el-checkbox-group>
             </el-collapse>
           </div>
         </el-collapse-item>
       </el-collapse>
+      <!-- <el-select v-model="value" placeholder="Select" size="large" style="width: 240px">
+        <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
+      </el-select> -->
       <div class="upload-container">
-        <input class="input-con" type="file" ref="fileUpload"
-          accept=".tif,.tiff,.geojson,.topojson,.gpx,.kml,.gml,.json" @change="handleFileUpload" key="file-upload" />
+        <el-button @click="triggermapFileInput">选择底图文件</el-button>
+        <input class="input-con" type="file" ref="mapfileUpload" style="display: none" accept=".geojson,.gpx,.json"
+          @change="handlemapFileUpload" key="file-upload" />
+      </div>
+      <div class="upload-container">
+        <el-button @click="triggerdataFileInput">选择数据文件</el-button>
+        <input class="input-con" type="file" ref="datafileUpload" style="display: none" accept=".geojson,.json"
+          @change="handledataFileUpload" key="file-upload" />
       </div>
     </el-aside>
   </el-container>
+  <el-dialog v-model="mapstyleselectshhow" title="底图样式设置" width="500" align-center>
+    <span>添加一些底图样式</span>
+    <el-form label-width="120px">
+      <el-form-item label="边界颜色">
+        <el-color-picker v-model="mapStyleOptions.boundaryColor"
+          @change="(value) => handleMapStyleChange('boundaryColor', value)"></el-color-picker>
+      </el-form-item>
+      <el-form-item label="边界宽度">
+        <el-input-number v-model="mapStyleOptions.boundaryWidth" :min="1" :max="10"
+          @change="(value) => handleMapStyleChange('boundaryWidth', value)"></el-input-number>
+      </el-form-item>
+      <el-form-item label="背景颜色">
+        <el-color-picker v-model="mapStyleOptions.backgroundColor"
+          @change="(value) => handleMapStyleChange('backgroundColor', value)"></el-color-picker>
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="mapstyleselectshhow = false">取消</el-button>
+        <el-button type="primary" @click="mapstyleselectshhow = false">
+          添加图层
+        </el-button>
+      </div>
+    </template>
+  </el-dialog>
+  <el-dialog v-model="datastyleselectshhow" title="底图样式设置" width="500" align-center>
+    <span>添加一些底图样式</span>
+    <el-form label-width="120px">
+      <el-form-item label="边界颜色">
+        <el-color-picker v-model="mapStyleOptions.boundaryColor"
+          @change="(value) => handleMapStyleChange('boundaryColor', value)"></el-color-picker>
+      </el-form-item>
+      <el-form-item label="边界宽度">
+        <el-input-number v-model="mapStyleOptions.boundaryWidth" :min="1" :max="10"
+          @change="(value) => handleMapStyleChange('boundaryWidth', value)"></el-input-number>
+      </el-form-item>
+      <el-form-item label="背景颜色">
+        <el-color-picker v-model="mapStyleOptions.backgroundColor"
+          @change="(value) => handleMapStyleChange('backgroundColor', value)"></el-color-picker>
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="datastyleselectshhow = false">取消</el-button>
+        <el-button type="primary" @click="datastyleselectshhow = false">
+          添加图层
+        </el-button>
+      </div>
+    </template>
+  </el-dialog>
 </template>
 
 <style lang="less" scoped>
@@ -170,15 +321,14 @@ onMounted(() => {
 }
 
 .checkbox-container {
-  padding: 5px; // 调整内边距使其更适合折叠面板
+  padding: 15px; // 调整内边距使其更适合折叠面板
 }
 
-.category-group {
-  margin: 8px 0;
-}
 
 .map-source-group {
-  padding: 5px 0;
+  padding: 10px 0;
+  display: flex;
+  flex-direction: column;
 }
 
 :deep(.el-collapse-item__content) {
@@ -211,5 +361,11 @@ onMounted(() => {
   .el-collapse-item__content {
     padding-left: 20px;
   }
+}
+
+
+.mapstyle {
+  position: absolute;
+  background-color: black;
 }
 </style>
