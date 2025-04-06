@@ -8,13 +8,18 @@ import Heatmap from 'ol/layer/Heatmap'
 import VectorSource from 'ol/source/Vector'
 import HeatData from "@/assets/mapJson/all_month.json"
 
+import * as source from 'ol/source';
+import VectorLayer from 'ol/layer/Vector';
+import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style.js'
+
 import { ElMessage } from 'element-plus'
 
 const map = ref(null)
 // 修改折叠面板控制变量为数组，可以同时展开多个
 const activeCollapse = ref(['1']);
 const activeMapSource = ref([]); // 添加地图源折叠控制
-
+// 添加图层管理数组
+const layers = ref(new Map());
 const sourcedata = reactive({
   // { url, type, name }
 })
@@ -58,10 +63,58 @@ const handlemapFileUpload = (e) => {
 
 const mapstyleselectshhow = ref(false)
 
+
+// 控制显示底图设置窗口
 const handleMapCheckedChange = (item, checked) => {
   if (checked) {
     mapstyleselectshhow.value = !mapstyleselectshhow.value
   }
+}
+
+
+const geojsonSourceAdd = async () => {
+  try {
+
+    console.log('正在加载geojson文件');
+    url = checkedmap.value[checkedmap.value.length - 1]
+    // 添加fetch获取实际数据
+    const response = await fetch(url)
+    const geojsonData = await response.json()
+    const vectorSource = new source.Vector({
+      features: new GeoJSON().readFeatures(geojsonData, {
+        dataProjection: 'EPSG:4326', // 数据原始投影
+        featureProjection: 'EPSG:3857' // 转换到地图投影
+      })
+    })
+
+    const vectorLayer = new VectorLayer({
+      source: vectorSource,
+      properties: {
+        name: 'geojson',
+        title: 'geojson数据'
+      },
+      style: (feature) => {
+        const featureColor = feature.get('color') || mapStyleOptions.backgroundColor; // 使用要素的color属性，如果没有则使用默认颜色
+        return new Style({
+          stroke: new Stroke({
+            color: mapStyleOptions.boundaryColor,
+            width: mapStyleOptions.boundaryWidth
+          }),
+          fill: new Fill({
+            color: featureColor
+          })
+        });
+      }
+    })
+
+    map.value.addLayer(vectorLayer)
+    layers.value.set(url, vectorLayer)
+    // layers.value.set(URL, vectorLayer)
+  } catch (error) {
+    console.error('加载GeoJSON失败:', error);
+    // 可以添加错误处理（例如显示通知）
+  }
+
 }
 
 
@@ -132,7 +185,16 @@ const handleMapStyleChange = (property, value) => {
 
 //////////////////// 数据颜色和字段设置 ////////////////////
 
+const dataStyleOptions = reactive({
+  boundaryColor: '#000000', // 默认边界颜色
+  boundaryWidth: 1, // 默认边界宽度
+  backgroundColor: '#ffffff' // 默认背景颜色
+})
 
+const handleDataStyleChange = (property, value) => {
+  console.log(`修改的样式属性: ${property}, 新值: ${value}`);
+  // 根据需要在这里更新地图样式
+}
 
 //////////////////// 数据颜色和字段 ////////////////////
 
@@ -213,9 +275,6 @@ onMounted(() => {
           </div>
         </el-collapse-item>
       </el-collapse>
-      <!-- <el-select v-model="value" placeholder="Select" size="large" style="width: 240px">
-        <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
-      </el-select> -->
       <div class="upload-container">
         <el-button @click="triggermapFileInput">选择底图文件</el-button>
         <input class="input-con" type="file" ref="mapfileUpload" style="display: none" accept=".geojson,.gpx,.json"
@@ -229,7 +288,6 @@ onMounted(() => {
     </el-aside>
   </el-container>
   <el-dialog v-model="mapstyleselectshhow" title="底图样式设置" width="500" align-center>
-    <span>添加一些底图样式</span>
     <el-form label-width="120px">
       <el-form-item label="边界颜色">
         <el-color-picker v-model="mapStyleOptions.boundaryColor"
@@ -247,26 +305,25 @@ onMounted(() => {
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="mapstyleselectshhow = false">取消</el-button>
-        <el-button type="primary" @click="mapstyleselectshhow = false">
+        <el-button type="primary" @click="geojsonSourceAdd">
           添加图层
         </el-button>
       </div>
     </template>
   </el-dialog>
-  <el-dialog v-model="datastyleselectshhow" title="底图样式设置" width="500" align-center>
-    <span>添加一些底图样式</span>
+  <el-dialog v-model="datastyleselectshhow" title="数据点样式设置" width="500" align-center>
     <el-form label-width="120px">
       <el-form-item label="边界颜色">
-        <el-color-picker v-model="mapStyleOptions.boundaryColor"
-          @change="(value) => handleMapStyleChange('boundaryColor', value)"></el-color-picker>
+        <el-color-picker v-model="dataStyleOptions.boundaryColor"
+          @change="(value) => handleDataStyleChange('boundaryColor', value)"></el-color-picker>
       </el-form-item>
       <el-form-item label="边界宽度">
-        <el-input-number v-model="mapStyleOptions.boundaryWidth" :min="1" :max="10"
+        <el-input-number v-model="dataStyleOptions.boundaryWidth" :min="1" :max="10"
           @change="(value) => handleMapStyleChange('boundaryWidth', value)"></el-input-number>
       </el-form-item>
       <el-form-item label="背景颜色">
-        <el-color-picker v-model="mapStyleOptions.backgroundColor"
-          @change="(value) => handleMapStyleChange('backgroundColor', value)"></el-color-picker>
+        <el-color-picker v-model="dataStyleOptions.backgroundColor"
+          @change="(value) => handleDataStyleChange('backgroundColor', value)"></el-color-picker>
       </el-form-item>
     </el-form>
     <template #footer>
