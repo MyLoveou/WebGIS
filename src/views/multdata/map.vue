@@ -339,6 +339,7 @@ onMounted(() => {
     <el-container class="aside-main">
       <el-main>
         <div id="map" class="map" tabindex="0"></div>
+        <span>工具栏位置</span>
       </el-main>
       <el-aside width="200px">
         <el-collapse v-model="activeCollapse">

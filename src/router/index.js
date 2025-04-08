@@ -3,6 +3,7 @@ import frame from '@/views/main/frame.vue'
 import map from '@/views/multdata/map.vue'
 import login from '@/views/login/login.vue'
 import makemap from '@/views/makemap/heatmap.vue'
+import basemap from '@/components/basemap.vue'
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
   routes: [
@@ -12,7 +13,8 @@ const router = createRouter({
       component: frame,
       children: [
         { path: '', name: 'Map', component: map },
-        { path: 'heatmap',name:'HeatMap',component: makemap},
+        { path: 'heatmap',name:'HeatMap', component: makemap},
+        { path: 'basemap', name: 'Basemap', component: basemap}
       ]
     },
     {

@@ -1,12 +1,12 @@
 <script setup>
-import { onMounted, ref, reactive } from 'vue'
+import { onMounted, ref, reactive, watch } from 'vue'
 import Map from 'ol/Map'
 import View from 'ol/View'
 import GeoJSON from 'ol/format/GeoJSON' // 导入GeoJSON解析器
 import { Tile as TileLayer, Image as ImageLayer } from 'ol/layer'
 import Heatmap from 'ol/layer/Heatmap'
 import VectorSource from 'ol/source/Vector'
-import HeatData from "@/assets/mapJson/all_month.json"
+
 
 import * as source from 'ol/source';
 import VectorLayer from 'ol/layer/Vector';
@@ -14,6 +14,8 @@ import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style.js'
 
 import { ElMessage } from 'element-plus'
 
+
+import BaseMap from '@/components/basemap.vue'
 const map = ref(null)
 // 修改折叠面板控制变量为数组，可以同时展开多个
 const activeCollapse = ref(['1']);
@@ -117,8 +119,8 @@ const geojsonmapSourceAdd = async () => {
     maplayers.value.set(url, vectorLayer)
     mapstyleselectshow.value = !mapstyleselectshow.value
     mapStyleOptions.boundaryColor = '#000000', // 默认边界颜色
-    mapStyleOptions.boundaryWidth = 1, // 默认边界宽度
-    mapStyleOptions.backgroundColor = '#ffffff' // 默认背景颜色
+      mapStyleOptions.boundaryWidth = 1, // 默认边界宽度
+      mapStyleOptions.backgroundColor = '#ffffff' // 默认背景颜色
     // layers.value.set(URL, vectorLayer)
   } catch (error) {
     console.error('加载GeoJSON失败:', error);
@@ -227,6 +229,7 @@ const jsondataSourceAdd = async () => {
     })
 
     map.value.addLayer(heatMapLayer)
+    console.log('显示成功')
     datalayers.value.set(url, heatMapLayer)
     datastyleselectshow.value = !datastyleselectshow.value
     // layers.value.set(URL, vectorLayer)
@@ -259,11 +262,11 @@ const handleMapStyleChange = (property, value) => {
 //////////////////// 数据颜色和字段设置 ////////////////////
 
 const dataStyleOptions = reactive({
-  radius: 50, // 设置半径
-  blur: 10, // 设置模糊度
+  radius: 20, // 设置半径
+  blur: 15, // 设置模糊度
   weight: null, // 设置字段
   gradient: ['#00f', '#0ff', '#ff0', '#f00'], // 设置渐变
-  opacity: 0.7, // 设置透明度
+  opacity: 0.3, // 设置透明度
 })
 
 const handleDataStyleChange = (property, value) => {
@@ -281,49 +284,46 @@ const removeGradientStop = (index) => {
 
 //////////////////// 数据颜色和字段 ////////////////////
 
+const controlStates = ref([true, false, true, false])
+// const map = ref(null)
 
+const handleMapInit = (basemap) => {
+  map.value = basemap
+  console.log('正在执行初始化')
+  console.log(basemap)
+  console.log(map.value)
+  // 可以在此进行其他地图初始化操作
+}
 
+// 添加地图实例监听
+watch(() => map.value, (newMap) => {
+  if (newMap) {
+    newMap.updateSize() // 确保地图尺寸正确
+    console.log('地图实例已更新:', newMap)
+  }
+})
 onMounted(() => {
   // 添加文件上传监听
   mapfileUpload.value.addEventListener('change', handlemapFileUpload);
   datafileUpload.value.addEventListener('change', handledataFileUpload);
-
-  // 创建热力图层
-  // const vectorSource = new VectorSource({
-  //   features: new GeoJSON().readFeatures(HeatData, {
-  //     dataProjection: 'EPSG:4326', // 数据原始投影
-  //     featureProjection: 'EPSG:3857' // 转换到地图投影
+  // map.value = new Map({})
+  // map.value = new Map({
+  //   target: 'map',
+  //   layers: [], // 显式初始化图层数组
+  //   view: new View({ // 使用View实例
+  //     center: [114.61760630731898, -57.997879217038296],
+  //     zoom: 4,
+  //     projection: 'EPSG:3857' // 与数据投影一致
   //   })
   // })
-
-  // const heatMapLayer = new Heatmap({
-  //   source: vectorSource,
-  //   radius: 8,
-  //   blur: 15,
-  //   weight: function (feature) {
-  //     const magnitude = feature.get('mag') || 0
-  //     // console.log(magnitude)
-  //     return Math.max(magnitude - 3, 0) // 确保权重非负
-  //   }
-  // })
-  // console.log('正在创建热力图')
-  map.value = new Map({
-    target: 'map',
-    layers: [], // 显式初始化图层数组
-    view: new View({ // 使用View实例
-      center: [114.61760630731898, -57.997879217038296],
-      zoom: 4,
-      projection: 'EPSG:3857' // 与数据投影一致
-    })
-  })
-  // map.value.addLayer(heatMapLayer)
 })
 </script>
 
 <template>
   <el-container>
     <el-main>
-      <div id="map"></div>
+      <!-- <div id="map"></div> -->
+      <BaseMap v-model:map="map" v-model:selectform="controlStates"></BaseMap>
     </el-main>
     <el-aside width="240px">
       <el-collapse v-model="activeCollapse">
@@ -386,8 +386,8 @@ onMounted(() => {
           @change="(value) => handleMapStyleChange('backgroundColor', value)"></el-color-picker>
       </el-form-item>
       <el-form-item label="透明度">
-          <el-slider v-model="mapStyleOptions.opacity" :min="0" :max="1" :step="0.1" />
-        </el-form-item>
+        <el-slider v-model="mapStyleOptions.opacity" :min="0" :max="1" :step="0.1" />
+      </el-form-item>
     </el-form>
     <template #footer>
       <div class="dialog-footer">
@@ -411,7 +411,7 @@ onMounted(() => {
           <div v-for="(color, index) in dataStyleOptions.gradient" :key="index" class="color-stop-item">
             <el-form-item :label="`颜色节点 ${index + 1}`">
               <el-color-picker v-model="dataStyleOptions.gradient[index]" show-alpha />
-              <el-button v-if="index > 0" type="danger" :icon="Delete" circle @click="removeGradientStop(index)"
+              <el-button v-if="index > 0" type="danger" icon="Delete" circle @click="removeGradientStop(index)"
                 class="remove-btn" />
             </el-form-item>
           </div>

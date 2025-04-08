@@ -29,6 +29,12 @@ import { RouterLink, RouterView } from 'vue-router'
                 <el-menu-item index="2-2">等</el-menu-item>
               </el-menu-item-group>
             </el-sub-menu>
+            <el-menu-item index="3" :route="{ name: 'Basemap' }">
+              <el-icon>
+                <setting />
+              </el-icon>
+              <span>地图控件</span>
+            </el-menu-item>
           </el-menu>
         </el-aside>
         <el-main><router-view></router-view></el-main>
