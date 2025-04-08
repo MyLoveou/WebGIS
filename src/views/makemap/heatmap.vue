@@ -187,7 +187,7 @@ const handleDataCheckedChange = async (item, checked) => {
     const layer = datalayers.value.get(item.url)
 
     map.value.removeLayer(layer)
-    datalayers.value.delete(URL);
+    datalayers.value.delete(item.url);
   }
 }
 
@@ -209,6 +209,7 @@ const jsondataSourceAdd = async () => {
     })
     let tempdatastyle = {}
     tempdatastyle = Object.assign(tempdatastyle, dataStyleOptions)
+    const tempweight = checkedweight.value
     dataStyleOptions.radius = 50 // 设置半径
     dataStyleOptions.blur = 10 // 设置模糊度
     dataStyleOptions.weight = null // 设置字段
@@ -223,7 +224,7 @@ const jsondataSourceAdd = async () => {
       gradient: tempdatastyle.gradient,
       opacity: tempdatastyle.opacity,
       weight: function (feature) {
-        const data = feature.get(checkedweight.value) || 0
+        const data = feature.get(tempweight) || 0
         return Math.max(data, 0)
       }
     })
