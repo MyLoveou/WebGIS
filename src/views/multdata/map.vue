@@ -359,7 +359,6 @@ watch(() => map.value, (newMap) => {
       <el-main>
         <!-- <div id="map" class="map" tabindex="0"></div> -->
         <BaseMap class="map" v-model:map="map" v-model:selectform="controlStates"></BaseMap>
-        <span>工具栏位置</span>
       </el-main>
       <el-aside width="200px">
         <el-collapse v-model="activeCollapse">
@@ -395,10 +394,10 @@ watch(() => map.value, (newMap) => {
   width: 100%;
   height: 80vh;
 }
-.el-container {
-  height: 100vh;
-  // 其他样式...
-}
+// .el-container {
+//   height: 100vh;
+//   // 其他样式...
+// }
 .el-aside {
   // height: 100%;
   display: flex;

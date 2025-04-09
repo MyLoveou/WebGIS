@@ -1,7 +1,18 @@
 <script setup>
+import { Feature } from 'ol'
+import { Point } from 'ol/geom'
 import Map from 'ol/Map'
 import View from 'ol/View'
-import { onMounted, onBeforeUnmount, watch, reactive, nextTick } from 'vue'
+import { onMounted, onBeforeUnmount, watch, reactive, nextTick, ref } from 'vue'
+
+import VectorLayer from 'ol/layer/Vector'
+import VectorSource from 'ol/source/Vector'
+import { Style, Circle, Fill, Stroke, Text } from 'ol/style'
+// 该组件用于初始化地图对象以及添加各种控件，同时实现添加标注的功能
+
+
+
+///////////////////////////// 添加控件 /////////////////////////////
 
 // 定义双向绑定的 props
 const map = defineModel('map')           // v-model:map
@@ -99,11 +110,14 @@ watch(() => [...selectform.value], (newVal) => {
 })
 
 // 初始化
-onMounted(() => {
+onMounted(async () => {
   if (!map.value) {
-    initMap()
+    await initMap()
     // console.log(map.value)
     console.log('地图初始化完成')
+    map.value.on('click', (event) => { // 监听鼠标点击事件，添加标注
+      addMarker(event.coordinate)
+    })
   }
 })
 
@@ -113,6 +127,93 @@ onBeforeUnmount(() => {
     map.value.setTarget(null)
   }
 })
+
+///////////////////////////// 添加控件 /////////////////////////////
+
+
+
+
+
+///////////////////////////// 添加标注 /////////////////////////////
+const markerSource = ref(new VectorSource())
+const markerLayer = ref(new VectorLayer({
+  source: markerSource.value,
+  style: new Style({
+    image: new Circle({
+      radius: 8,
+      fill: new Fill({ color: '#ff4500' }),
+      stroke: new Stroke({
+        color: '#ffffff',
+        width: 2
+      })
+    }),
+    text: new Text({
+      text: '', // 初始无文字
+      font: '14px Calibri,sans-serif',
+      fill: new Fill({ color: '#fff' }),
+      backgroundFill: new Fill({ color: 'rgba(0,0,0,0.6)' }),
+      padding: [4, 4, 4, 4],
+      offsetY: -20
+    })
+  })
+}))
+
+// 设置样式
+const markstyle = reactive({
+  text: '',
+  font: '',
+  fillcolor: '',
+
+})
+
+// 向图层添加标注
+const addMarker = (coordinate) => {
+  const marker = new Feature({
+    geometry: new Point(coordinate),
+    name: `标注${markerSource.value.getFeatures().length + 1}`,
+    timestamp: new Date().toISOString()
+  })
+  // 动态设置文字样式
+  marker.setStyle(new Style({
+    text: new Text({
+      text: marker.get('name'),
+      font: '14px Calibri,sans-serif',
+      fill: new Fill({ color: '#fff' }),
+      backgroundFill: new Fill({ color: 'rgba(0,0,0,0.6)' }),
+      padding: [4, 4, 4, 4],
+      offsetY: -20
+    })
+  }))
+
+  markerSource.value.addFeature(marker)
+}
+
+const markerstyleselectshow = ref(true) // 用于控制标注样式设置弹窗显隐
+const markerstyleOptions = reactive({
+  fontSize: '',
+  fontColor: '',
+  fontFamily: '',
+  newLayerName: '',
+  templateName: '',
+})
+
+const handleMapStyleChange = (name, value) => {
+  console.log(`${name}的新值为${value}`)
+}
+const markerlayers = ref([
+  // { name, layer }
+])
+
+const newmarkercreate = ref(false)
+
+const num = ref(1)
+const handleChange = (value) => {
+  console.log(value)
+}
+///////////////////////////// 添加控件 /////////////////////////////
+
+
+
 </script>
 
 <template>
@@ -128,6 +229,55 @@ onBeforeUnmount(() => {
       </div>
     </div>
   </div>
+  <el-dialog v-model="markerstyleselectshow" title="标注样式设置" width="500" align-center>
+    <el-form label-width="130px">
+      <el-form-item label="字体大小">
+        <el-input-number v-model="num" :min="1" :max="10" @change="handleChange" />
+      </el-form-item>
+      <el-form-item label="字体颜色">
+        <el-color-picker v-model="markerstyleOptions.fontColor"
+          @change="(value) => handleMapStyleChange('fontColor', value)" />
+      </el-form-item>
+      <el-form-item label="字体">
+        <el-select v-model="markerstyleOptions.fontFamily" placeholder="请选择字体">
+          <el-option label="Calibri" value="Calibri" />
+          <el-option label="Arial" value="Arial" />
+          <el-option label="Times New Roman" value="Times New Roman" />
+        </el-select>
+      </el-form-item>
+      <div style="display: flex; align-items: center;">
+        <el-form-item label="选择标注图层">
+          <el-select v-model="markerstyleOptions.fontFamily" style="width: 200px;" placeholder="请选择标注图层">
+            <el-option label="Calibri" value="Calibri" />
+            <el-option label="Arial" value="Arial" />
+            <el-option label="Times New Roman" value="Times New Roman" />
+          </el-select>
+        </el-form-item>
+        <el-button style="display: inline;" v-if="!newmarkercreate" type="primary"
+          @click="newmarkercreate = !newmarkercreate">新建标注图层</el-button>
+      </div>
+
+      <div v-if="newmarkercreate">
+        <el-form-item label="新建标注图层名称">
+          <el-input v-model="markerstyleOptions.newLayerName"
+            @change="(value) => handleMapStyleChange('newLayerName', value)" />
+        </el-form-item>
+        <el-button v-if="newmarkercreate" type="primary" @click="newmarkercreate = !newmarkercreate">确定</el-button>
+      </div>
+
+
+    </el-form>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button type="primary">保存为自定义样式模板</el-button>
+        <el-button @click="markerstyleOptions = false">取消</el-button>
+        <el-button type="primary" @click="geojsonmapSourceAdd">
+          添加
+        </el-button>
+      </div>
+    </template>
+  </el-dialog>
+
 </template>
 
 <style lang="less" scoped>
@@ -143,13 +293,13 @@ onBeforeUnmount(() => {
   }
 
   .tool-panel {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: rgba(255, 255, 255, 0.9);
-    padding: 1rem;
-    border-radius: 4px;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, .1);
+    // position: absolute;
+    // top: 1rem;
+    // right: 1rem;
+    // background: rgba(255, 255, 255, 0.9);
+    // padding: 1rem;
+    // border-radius: 4px;
+    // box-shadow: 0 2px 12px 0 rgba(0, 0, 0, .1);
 
     .tool-header {
       font-weight: 600;
@@ -159,7 +309,7 @@ onBeforeUnmount(() => {
 
     .tool-body {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       gap: 0.5rem;
 
       :deep(.el-checkbox) {
@@ -171,22 +321,94 @@ onBeforeUnmount(() => {
 
 // 覆盖OpenLayers控件样式
 :deep(.ol-control) {
-  background: rgba(255, 255, 255, 0.8);
+  // background: rgba(255, 255, 255, 0.8);
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
   button {
-    background-color: #fff;
+    // background-color: #fff;
+    border: none;
+    color: #333;
+    border-radius: 4px;
 
     &:hover {
       background-color: #f5f7fa;
     }
   }
+}
 
-  &.ol-rotate {
-    top: 4em;
+/* 默认控件透明度设置 */
+:deep(.ol-control) {
+  transition: background-color 0.3s ease;
+  /* 动态效果 */
+}
+
+/* 比例尺控件 */
+:deep(.ol-scale-line-custom) {
+  left: 1em;
+  bottom: 1em;
+  background: rgba(255, 255, 255, 0.6);
+  /* 半透明背景 */
+  border: 1px solid #ccc;
+  padding: 4px;
+
+  .ol-scale-line-inner {
+    position: absolute;
+    border: 1px solid #000;
+    border-top: none;
+    padding: 2px;
+    border-radius: 4px;
+  }
+}
+
+/* 鹰眼控件样式 */
+:deep(.ol-overviewmap-custom) {
+  position: absolute;
+  bottom: 3em;
+  /* 增加 bottom 值，远离底图 */
+  right: 1em;
+  border: 1px solid #ccc;
+  background: rgba(255, 255, 255, 0.7);
+  /* 半透明背景 */
+}
+
+/* 指北针控件样式 */
+:deep(.ol-rotate-custom) {
+  position: absolute;
+  top: 3em;
+  /* 增加 top 值，远离底图 */
+  left: 1em;
+  border: 1px solid #ccc;
+  background: rgba(255, 255, 255, 0.7);
+  /* 半透明背景 */
+}
+
+/* 缩放控件样式 */
+:deep(.ol-zoom-custom) {
+  position: absolute;
+  top: 100px;
+  /* 调整 top 值，避免遮挡重点区域 */
+  right: 100px;
+  background: rgba(255, 255, 255, 0.7);
+  /* 半透明背景 */
+}
+
+
+
+// 地图控件动画
+@keyframes controlEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
 
-  &.ol-overviewmap {
-    bottom: 2.5em;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
+}
+
+:deep(.ol-control) {
+  animation: controlEntrance 0.3s ease-out;
 }
 </style>
