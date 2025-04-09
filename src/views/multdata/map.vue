@@ -2,7 +2,7 @@
 import Map from 'ol/Map'
 import View from 'ol/View'
 import { Tile as TileLayer, Image as ImageLayer } from 'ol/layer'
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, watch } from 'vue'
 import XYZ from "ol/source/XYZ"
 import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style.js'
 import * as source from 'ol/source';
@@ -13,8 +13,10 @@ import GeoJSON from 'ol/format/GeoJSON.js'
 
 import { ElMessage } from 'element-plus'
 
+import BaseMap from '@/components/basemap.vue'
+
 //////////////////////////////////// 添加图层 ////////////////////////////////////
-const layermap = ref(null)
+const map = ref(null)
 let layer = null;
 
 // 添加图层管理数组
@@ -36,18 +38,18 @@ const AddLayer = (item, key, category, checked) => {
         center: [114.61760630731898, -57.997879217038296],
       }
     })
-    layermap.value.addLayer(layer)
+    map.value.addLayer(layer)
     layers.value.set(item.value, layer);
     // 新增：更新视图中心
-    // const view = layermap.value.getView();
+    // const view = map.value.getView();
     // view.setCenter(layer.getProperties().center);
     // view.setZoom(8); // 保持原有缩放级别
-
+    console.log('测试')
   } else {
     // 移除已有图层
     const layer = layers.value.get(item.value);
     if (layer) {
-      layermap.value.removeLayer(layer)
+      map.value.removeLayer(layer)
       layers.value.delete(item.value);
     }
   }
@@ -59,10 +61,10 @@ const handleCheckedChange = (item, category, checked) => {
   if (category === '天地图') {
     AddLayer(item, TDkey, category, checked)
   }
-  if (category === '高德地图') {
+  else if (category === '高德地图') {
     AddLayer(item, GDkey, category, checked)
   }
-  if (category === 'arcgis地图') {
+  else if (category === 'arcgis地图') {
     AddLayer(item, '', category, checked)
   }
   else {
@@ -167,9 +169,9 @@ const createGPXLayer = (URL, checked) => {
   if (checked) {
     // 清理现有GPX图层
     console.log('正在显示GPX图层')
-    layermap.value.getLayers().forEach(layer => {
+    map.value.getLayers().forEach(layer => {
       if (layer.get('name') === 'gpx') {
-        layermap.value.removeLayer(layer);
+        map.value.removeLayer(layer);
       }
     })
 
@@ -232,25 +234,25 @@ const createGPXLayer = (URL, checked) => {
     vectorSource.on('addfeature', function () {
       const extent = vectorSource.getExtent();
       if (extent[0] !== Infinity) {
-        layermap.value.getView().fit(extent, {
+        map.value.getView().fit(extent, {
           padding: [100, 100, 100, 100],
           duration: 1000
         });
       }
     });
 
-    layermap.value.addLayer(vectorLayer);
+    map.value.addLayer(vectorLayer);
     layers.value.set(URL, vectorLayer);
   } else {
     // 移除已有图层
     const layer = layers.value.get(URL);
     if (layer) {
-      layermap.value.removeLayer(layer)
+      map.value.removeLayer(layer)
       layers.value.delete(URL);
     }
   }
 
-  // layermap.value.getView().fit(bounds, layermap.value.getSize());
+  // map.value.getView().fit(bounds, map.value.getSize());
 }
 
 
@@ -284,13 +286,13 @@ const creatGeojsonLayer = async (URL, checked) => {
         })
       })
 
-      layermap.value.addLayer(vectorLayer)
+      map.value.addLayer(vectorLayer)
       layers.value.set(URL, vectorLayer)
     } else {
       // 移除已有图层
       const layer = layers.value.get(URL);
       if (layer) {
-        layermap.value.removeLayer(layer)
+        map.value.removeLayer(layer)
         layers.value.delete(URL);
       }
     }
@@ -313,32 +315,50 @@ onMounted(() => {
   fileUpload.value.addEventListener('change', handleFileUpload);
 
 
-  layermap.value = new Map({
-    target: 'map',
-    // layers: [layer],
-    view: new View({
-      // 北京 为中心
-      center: [114.61760630731898, -57.997879217038296],
-      zoom: 8,
-      projection: 'EPSG:3857' // 统一使用Web墨卡托
-    }),
-    // 鼠标控件：鼠标在地图上移动时显示坐标信息。
-    controls: defaultControls().extend([
-      // 加载鼠标控件
-      new MousePosition()
-    ])
-  });
+  // map.value = new Map({
+  //   target: 'map',
+  //   // layers: [layer],
+  //   view: new View({
+  //     // 北京 为中心
+  //     center: [114.61760630731898, -57.997879217038296],
+  //     zoom: 8,
+  //     projection: 'EPSG:3857' // 统一使用Web墨卡托
+  //   }),
+  //   // 鼠标控件：鼠标在地图上移动时显示坐标信息。
+  //   controls: defaultControls().extend([
+  //     // 加载鼠标控件
+  //     new MousePosition()
+  //   ])
+  // });
 });
 
 //////////////////////////////////// onMounted ////////////////////////////////////
+const controlStates = ref([false, false, false, false])
+// const map = ref(null)
 
+const handleMapInit = (basemap) => {
+  map.value = basemap
+  console.log('正在执行初始化')
+  console.log(basemap)
+  console.log(map.value)
+  // 可以在此进行其他地图初始化操作
+}
+
+// 添加地图实例监听
+watch(() => map.value, (newMap) => {
+  if (newMap) {
+    newMap.updateSize() // 确保地图尺寸正确
+    console.log('地图实例已更新:', newMap)
+  }
+})
 </script>
 
 <template>
   <div class="home">
     <el-container class="aside-main">
       <el-main>
-        <div id="map" class="map" tabindex="0"></div>
+        <!-- <div id="map" class="map" tabindex="0"></div> -->
+        <BaseMap class="map" v-model:map="map" v-model:selectform="controlStates"></BaseMap>
         <span>工具栏位置</span>
       </el-main>
       <el-aside width="200px">
@@ -375,8 +395,12 @@ onMounted(() => {
   width: 100%;
   height: 80vh;
 }
-
+.el-container {
+  height: 100vh;
+  // 其他样式...
+}
 .el-aside {
+  // height: 100%;
   display: flex;
   flex-direction: column;
   position: relative;

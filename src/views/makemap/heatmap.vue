@@ -285,7 +285,8 @@ const removeGradientStop = (index) => {
 
 //////////////////// 数据颜色和字段 ////////////////////
 
-const controlStates = ref([true, false, true, false])
+const controlStates = ref([false, false, false, false])
+
 // const map = ref(null)
 
 const handleMapInit = (basemap) => {
@@ -307,16 +308,6 @@ onMounted(() => {
   // 添加文件上传监听
   mapfileUpload.value.addEventListener('change', handlemapFileUpload);
   datafileUpload.value.addEventListener('change', handledataFileUpload);
-  // map.value = new Map({})
-  // map.value = new Map({
-  //   target: 'map',
-  //   layers: [], // 显式初始化图层数组
-  //   view: new View({ // 使用View实例
-  //     center: [114.61760630731898, -57.997879217038296],
-  //     zoom: 4,
-  //     projection: 'EPSG:3857' // 与数据投影一致
-  //   })
-  // })
 })
 </script>
 
@@ -451,7 +442,7 @@ onMounted(() => {
 #map {
   /* 使用ID选择器 */
   width: 100%;
-  height: 80vh;
+  height: 100vh;
 }
 
 .el-aside {

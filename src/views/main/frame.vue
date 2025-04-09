@@ -51,7 +51,7 @@ import { RouterLink, RouterView } from 'vue-router'
 
 .el-main {
   --el-main-padding: 0px !important;
-  height: 663px;
+  height: 100%;
 }
 
 .el-container {
