@@ -2,7 +2,7 @@
 import Map from 'ol/Map'
 import View from 'ol/View'
 import { Tile as TileLayer, Image as ImageLayer } from 'ol/layer'
-import { ref, onMounted, reactive, watch } from 'vue'
+import { ref, onMounted, reactive, watch, onUpdated } from 'vue'
 import XYZ from "ol/source/XYZ"
 import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style.js'
 import * as source from 'ol/source';
@@ -314,22 +314,6 @@ onMounted(() => {
   // 添加文件上传监听
   fileUpload.value.addEventListener('change', handleFileUpload);
 
-
-  // map.value = new Map({
-  //   target: 'map',
-  //   // layers: [layer],
-  //   view: new View({
-  //     // 北京 为中心
-  //     center: [114.61760630731898, -57.997879217038296],
-  //     zoom: 8,
-  //     projection: 'EPSG:3857' // 统一使用Web墨卡托
-  //   }),
-  //   // 鼠标控件：鼠标在地图上移动时显示坐标信息。
-  //   controls: defaultControls().extend([
-  //     // 加载鼠标控件
-  //     new MousePosition()
-  //   ])
-  // });
 });
 
 //////////////////////////////////// onMounted ////////////////////////////////////
@@ -351,6 +335,8 @@ watch(() => map.value, (newMap) => {
     console.log('地图实例已更新:', newMap)
   }
 })
+
+
 </script>
 
 <template>
@@ -358,7 +344,8 @@ watch(() => map.value, (newMap) => {
     <el-container class="aside-main">
       <el-main>
         <!-- <div id="map" class="map" tabindex="0"></div> -->
-        <BaseMap class="map" v-model:map="map" v-model:selectform="controlStates"></BaseMap>
+        <BaseMap class="map" v-model:map="map" v-model:selectform="controlStates">
+        </BaseMap>
       </el-main>
       <el-aside width="200px">
         <el-collapse v-model="activeCollapse">
@@ -394,6 +381,7 @@ watch(() => map.value, (newMap) => {
   width: 100%;
   height: 80vh;
 }
+
 // .el-container {
 //   height: 100vh;
 //   // 其他样式...

@@ -5,11 +5,7 @@ import { RouterLink, RouterView } from 'vue-router'
 <template>
   <div class="common-layout">
     <el-container>
-      <el-header>
-        测试
-      </el-header>
-      <el-container class="aside-main">
-        <el-aside width="160px">
+      <el-aside width="160px">
           <el-menu :router="true" class="el-menu-vertical-demo">
             <el-menu-item index="1" :route="{ name: 'Map' }">
               <el-icon>
@@ -29,14 +25,26 @@ import { RouterLink, RouterView } from 'vue-router'
                 <el-menu-item index="2-2">等</el-menu-item>
               </el-menu-item-group>
             </el-sub-menu>
-            <el-menu-item index="3" :route="{ name: 'Basemap' }">
-              <el-icon>
-                <setting />
-              </el-icon>
-              <span>地图控件</span>
-            </el-menu-item>
+            <el-sub-menu index="3">
+              <template #title>
+                <el-icon>
+                  <location />
+                </el-icon>
+                <span>旅游打卡系统</span>
+              </template>
+              <el-menu-item-group>
+                <el-menu-item index="3-1" :route="{ name: 'Main' }">首页</el-menu-item>
+                <el-menu-item index="3-2" :route="{ name: 'User' }">用户</el-menu-item>
+                <el-menu-item index="3-3" :route="{ name: 'Favorites' }">收藏夹</el-menu-item>
+                <el-menu-item index="3-4" :route="{ name: 'Track' }">足迹</el-menu-item>
+                <el-menu-item index="3-5" :route="{ name: 'Doc' }">文章</el-menu-item>
+                <el-menu-item index="3-6" :route="{ name: 'World' }">世界</el-menu-item>
+              </el-menu-item-group>
+            </el-sub-menu>
           </el-menu>
         </el-aside>
+      <el-container>
+        <el-header>Header</el-header>
         <el-main><router-view></router-view></el-main>
       </el-container>
     </el-container>

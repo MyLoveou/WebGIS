@@ -8,6 +8,7 @@ import { onMounted, onBeforeUnmount, watch, reactive, nextTick, ref } from 'vue'
 import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
 import { Style, Circle, Fill, Stroke, Text } from 'ol/style'
+import TileLayer from 'ol/layer/Tile'
 // 该组件用于初始化地图对象以及添加各种控件，同时实现添加标注的功能
 
 
@@ -17,7 +18,6 @@ import { Style, Circle, Fill, Stroke, Text } from 'ol/style'
 // 定义双向绑定的 props
 const map = defineModel('map')           // v-model:map
 const selectform = defineModel('selectform') // v-model:selectform
-
 const controls = reactive({
   scaleLine: null,
   overviewMap: null,
@@ -57,7 +57,22 @@ const addControl = async (type) => {
     case 'overview':
       if (!controls.overviewMap) {
         const { default: OverviewMap } = await import('ol/control/OverviewMap')
-        controls.overviewMap = new OverviewMap({ collapsed: false, collapseLabel: '\u00BB' })
+        const baseLayer = map.value.getLayers().item(0)
+
+
+        controls.overviewMap = new OverviewMap({
+          collapseLabel: '\u00BB',
+          layers: [new TileLayer({ source: baseLayer.getSource() })], // new TileLayer({ source: baseLayer.getSource() }),
+          // 控件展开标识
+          collapseLabel: '\u00BB',
+          // 控件折叠标识
+          label: '\u00AB',
+          // 设置控件展开
+          collapsed: false,
+          // 若想让鹰眼控件显示在地图HTML(viewport)外面，则需要提供target元素
+          target: document.getElementById('custome-overviewmap'),
+          tipLabel: "收缩按钮",
+        })
         map.value.addControl(controls.overviewMap)
       }
       break
@@ -119,6 +134,7 @@ onMounted(async () => {
       addMarker(event.coordinate)
     })
   }
+  console.log(selectform)
 })
 
 onBeforeUnmount(() => {
@@ -190,11 +206,12 @@ const addMarker = (coordinate) => {
 
 const markerstyleselectshow = ref(true) // 用于控制标注样式设置弹窗显隐
 const markerstyleOptions = reactive({
-  fontSize: '',
-  fontColor: '',
-  fontFamily: '',
-  newLayerName: '',
-  templateName: '',
+  fontSize: '', // 字体大小
+  fontColor: '', // 字体颜色
+  fontFamily: '', // 字体
+  newLayerName: '', // 新建图层名称
+  markerlayer: '', // 
+  stylemodel: '' // 样式模板
 })
 
 const handleMapStyleChange = (name, value) => {
@@ -219,6 +236,9 @@ const handleChange = (value) => {
 <template>
   <div class="map-container">
     <div id="base-map" class="map"></div>
+    <div v-show="selectform[1]" id="custome-overviewmap" class="overview">
+      测试内容
+    </div>
     <div class="tool-panel">
       <div class="tool-header">地图控件</div>
       <div class="tool-body">
@@ -245,9 +265,9 @@ const handleChange = (value) => {
           <el-option label="Times New Roman" value="Times New Roman" />
         </el-select>
       </el-form-item>
-      <div style="display: flex; align-items: center;">
+      <div style="display: flex">
         <el-form-item label="选择标注图层">
-          <el-select v-model="markerstyleOptions.fontFamily" style="width: 200px;" placeholder="请选择标注图层">
+          <el-select v-model="markerstyleOptions.markerlayer" style="width: 200px;" placeholder="请选择标注图层">
             <el-option label="Calibri" value="Calibri" />
             <el-option label="Arial" value="Arial" />
             <el-option label="Times New Roman" value="Times New Roman" />
@@ -257,14 +277,20 @@ const handleChange = (value) => {
           @click="newmarkercreate = !newmarkercreate">新建标注图层</el-button>
       </div>
 
-      <div v-if="newmarkercreate">
+      <div v-if="newmarkercreate" style="display: flex">
         <el-form-item label="新建标注图层名称">
           <el-input v-model="markerstyleOptions.newLayerName"
             @change="(value) => handleMapStyleChange('newLayerName', value)" />
         </el-form-item>
         <el-button v-if="newmarkercreate" type="primary" @click="newmarkercreate = !newmarkercreate">确定</el-button>
       </div>
-
+      <el-form-item label="选择样式模板">
+        <el-select v-model="markerstyleOptions.stylemodel" style="width: 200px;" placeholder="请选择样式模板">
+          <el-option label="Calibri" value="Calibri" />
+          <el-option label="Arial" value="Arial" />
+          <el-option label="Times New Roman" value="Times New Roman" />
+        </el-select>
+      </el-form-item>
 
     </el-form>
     <template #footer>
@@ -293,14 +319,6 @@ const handleChange = (value) => {
   }
 
   .tool-panel {
-    // position: absolute;
-    // top: 1rem;
-    // right: 1rem;
-    // background: rgba(255, 255, 255, 0.9);
-    // padding: 1rem;
-    // border-radius: 4px;
-    // box-shadow: 0 2px 12px 0 rgba(0, 0, 0, .1);
-
     .tool-header {
       font-weight: 600;
       margin-bottom: 0.5rem;
@@ -393,7 +411,13 @@ const handleChange = (value) => {
   /* 半透明背景 */
 }
 
-
+.overview {
+  position: absolute;
+  height: 160px;
+  width: 170px;
+  right: 0px;
+  top: 10px;
+}
 
 // 地图控件动画
 @keyframes controlEntrance {
