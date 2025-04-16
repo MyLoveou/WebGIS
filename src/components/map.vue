@@ -5,6 +5,7 @@ import * as source from 'ol/source'
 import Map from 'ol/Map'
 import View from 'ol/View'
 import { Tile } from 'ol/layer'
+import { fromLonLat } from 'ol/proj'
 // 定义双向绑定的 props
 const map = defineModel('map')           // v-model:map
 const gaodeLayer = new Tile({
@@ -18,7 +19,7 @@ const initMap = async () => {
   const newMap = new Map({
     target: 'baseofmap',
     view: new View({
-      center: [116.4074, -39.9042],
+      center: fromLonLat([116.4074, 39.9042]),
       zoom: 9,
       projection: 'EPSG:3857'
     }),
@@ -31,10 +32,11 @@ const initMap = async () => {
 }
 
 onMounted(async () => {
-  if (!map.value) {
-    await initMap()
-    console.log('地图初始化完成')
+  if (map.value) {
+    map.value.setTarget(null)
   }
+  await initMap()
+  console.log('地图初始化完成')
 })
 
 
